@@ -1,54 +1,57 @@
 /**
  * Java parser for the MRZ records, as specified by the ICAO organization.
  * Copyright (C) 2011 Innovatrics s.r.o.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package com.innovatrics.mrz.types;
 
+import java.io.Serializable;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-
-
 /**
  * Holds a MRZ date type.
+ *
  * @author Martin Vysny
  */
 public class MrzDate implements Serializable, Comparable<MrzDate> {
-    private static final long serialVersionUID = 1L;
 
-    private static Logger log = LoggerFactory.getLogger(MrzDate.class);
-
+    private static final Logger log = LoggerFactory.getLogger(MrzDate.class);
 
     /**
      * Year, 00-99.
-     * <p/>
+     * <p>
      * Note: I am unable to find a specification of conversion of this value to a full year value.
      */
     public final int year;
+
     /**
      * Month, 1-12.
      */
     public final int month;
+
     /**
      * Day, 1-31.
      */
     public final int day;
 
+    /**
+     * The raw MRZ string representing this date, or null if generated from year, month, day
+     */
     private final String mrz;
 
     /**
@@ -56,6 +59,13 @@ public class MrzDate implements Serializable, Comparable<MrzDate> {
      */
     private final boolean isValidDate;
 
+    /**
+     * Creates a new MRZ date.
+     *
+     * @param year  the year, 00-99
+     * @param month the month, 1-12
+     * @param day   the day, 1-31
+     */
     public MrzDate(int year, int month, int day) {
         this.year = year;
         this.month = month;
@@ -64,6 +74,14 @@ public class MrzDate implements Serializable, Comparable<MrzDate> {
         this.mrz = null;
     }
 
+    /**
+     * Creates a new MRZ date.
+     *
+     * @param year  the year, 00-99
+     * @param month the month, 1-12
+     * @param day   the day, 1-31
+     * @param raw   the raw MRZ string representing this date
+     */
     public MrzDate(int year, int month, int day, String raw) {
         this.year = year;
         this.month = month;
@@ -77,25 +95,27 @@ public class MrzDate implements Serializable, Comparable<MrzDate> {
         return "{" + day + "/" + month + "/" + year + '}';
     }
 
+    /**
+     * Serializes this date to MRZ format.
+     *
+     * @return the MRZ string representing this date
+     */
     public String toMrz() {
-        if(mrz != null) {
-            return mrz;
-        } else {
-            return String.format("%02d%02d%02d", year, month, day);
-        }
+        return Objects.requireNonNullElseGet(
+                mrz, () -> String.format("%02d%02d%02d", year, month, day));
     }
 
     private boolean check() {
         if (year < 0 || year > 99) {
-            log.debug("Parameter year: invalid value " + year + ": must be 0..99");
+            log.debug("Parameter year: invalid value {}: must be 0..99", year);
             return false;
         }
         if (month < 1 || month > 12) {
-            log.debug("Parameter month: invalid value " + month + ": must be 1..12");
+            log.debug("Parameter month: invalid value {}: must be 1..12", month);
             return false;
         }
         if (day < 1 || day > 31) {
-            log.debug("Parameter day: invalid value " + day + ": must be 1..31");
+            log.debug("Parameter day: invalid value {}: must be 1..31", day);
             return false;
         }
 
@@ -117,10 +137,7 @@ public class MrzDate implements Serializable, Comparable<MrzDate> {
         if (this.month != other.month) {
             return false;
         }
-        if (this.day != other.day) {
-            return false;
-        }
-        return true;
+        return this.day == other.day;
     }
 
     @Override
@@ -133,11 +150,13 @@ public class MrzDate implements Serializable, Comparable<MrzDate> {
     }
 
     public int compareTo(MrzDate o) {
-        return Integer.valueOf(year * 10000 + month * 100 + day).compareTo(o.year * 10000 + o.month * 100 + o.day);
+        return Integer.compare(
+                year * 10000 + month * 100 + day, o.year * 10000 + o.month * 100 + o.day);
     }
 
     /**
      * Returns the date validity
+     *
      * @return Returns a boolean true if the parsed date is valid, false otherwise
      */
     public boolean isDateValid() {

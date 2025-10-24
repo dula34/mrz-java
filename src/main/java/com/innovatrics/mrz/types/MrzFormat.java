@@ -1,17 +1,17 @@
 /**
  * Java parser for the MRZ records, as specified by the ICAO organization.
  * Copyright (C) 2011 Innovatrics s.r.o.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,16 +21,11 @@ package com.innovatrics.mrz.types;
 import com.innovatrics.mrz.MrzParseException;
 import com.innovatrics.mrz.MrzRange;
 import com.innovatrics.mrz.MrzRecord;
-import com.innovatrics.mrz.records.FrenchIdCard;
-import com.innovatrics.mrz.records.MRP;
-import com.innovatrics.mrz.records.MrtdTd1;
-import com.innovatrics.mrz.records.MrtdTd2;
-import com.innovatrics.mrz.records.MrvA;
-import com.innovatrics.mrz.records.MrvB;
-import com.innovatrics.mrz.records.SlovakId2_34;
+import com.innovatrics.mrz.records.*;
 
 /**
  * Lists all supported MRZ formats. Note that the order of the enum constants are important, see for example {@link  #FRENCH_ID}.
+ *
  * @author Martin Vysny, Pierrick Martin
  */
 public enum MrzFormat {
@@ -45,12 +40,11 @@ public enum MrzFormat {
      * See below for the "if" test.
      */
     FRENCH_ID(2, 36, FrenchIdCard.class) {
-
         public boolean isFormatOf(String[] mrzRows) {
             if (!super.isFormatOf(mrzRows)) {
                 return false;
             }
-            return mrzRows[0].substring(0, 5).equals("IDFRA");
+            return mrzRows[0].startsWith("IDFRA");
         }
     },
     /**
@@ -59,14 +53,13 @@ public enum MrzFormat {
      * See below for the "if" test.
      */
     MRV_VISA_B(2, 36, MrvB.class) {
-
         public boolean isFormatOf(String[] mrzRows) {
             if (!super.isFormatOf(mrzRows)) {
                 return false;
             }
-            return mrzRows[0].substring(0, 1).equals("V");
-        } 
-    },    
+            return mrzRows[0].charAt(0) == 'V';
+        }
+    },
     /**
      * MRTD td2 format: A two line long, 36 characters per line format.
      */
@@ -77,27 +70,31 @@ public enum MrzFormat {
      * See below for the "if" test.
      */
     MRV_VISA_A(2, 44, MrvA.class) {
-
         public boolean isFormatOf(String[] mrzRows) {
             if (!super.isFormatOf(mrzRows)) {
                 return false;
             }
-            return mrzRows[0].substring(0, 1).equals("V");
+            return mrzRows[0].charAt(0) == 'V';
         }
-    }, 
+    },
     /**
      * MRP Passport format: A two line long, 44 characters per line format.
      */
-    PASSPORT(2, 44, MRP.class),
+    PASSPORT(2, 44, MRP.class);
+
     /**
-     * Unknown 2 line/34 characters per line format, used with old Slovak ID cards.
+     * Number of rows in this format.
      */
-    SLOVAK_ID_234(2, 34, SlovakId2_34.class);
     public final int rows;
+
+    /**
+     * Number of columns in this format.
+     */
     public final int columns;
+
     private final Class<? extends MrzRecord> recordClass;
 
-    private MrzFormat(int rows, int columns, Class<? extends MrzRecord> recordClass) {
+    MrzFormat(int rows, int columns, Class<? extends MrzRecord> recordClass) {
         this.rows = rows;
         this.columns = columns;
         this.recordClass = recordClass;
@@ -105,6 +102,7 @@ public enum MrzFormat {
 
     /**
      * Checks if this format is able to parse given serialized MRZ record.
+     *
      * @param mrzRows MRZ record, separated into rows.
      * @return true if given MRZ record is of this type, false otherwise.
      */
@@ -114,15 +112,20 @@ public enum MrzFormat {
 
     /**
      * Detects given MRZ format.
+     *
      * @param mrz the MRZ string.
      * @return the format, never null.
      */
-    public static final MrzFormat get(String mrz) {
+    public static MrzFormat get(String mrz) {
         final String[] rows = mrz.split("\n");
         final int cols = rows[0].length();
         for (int i = 1; i < rows.length; i++) {
             if (rows[i].length() != cols) {
-                throw new MrzParseException("Different row lengths: 0: " + cols + " and " + i + ": " + rows[i].length(), mrz, new MrzRange(0, 0, 0), null);
+                throw new MrzParseException(
+                        "Different row lengths: 0: " + cols + " and " + i + ": " + rows[i].length(),
+                        mrz,
+                        new MrzRange(0, 0, 0),
+                        null);
             }
         }
         for (final MrzFormat f : values()) {
@@ -130,16 +133,21 @@ public enum MrzFormat {
                 return f;
             }
         }
-        throw new MrzParseException("Unknown format / unsupported number of cols/rows: " + cols + "/" + rows.length, mrz, new MrzRange(0, 0, 0), null);
+        throw new MrzParseException(
+                "Unknown format / unsupported number of cols/rows: " + cols + "/" + rows.length,
+                mrz,
+                new MrzRange(0, 0, 0),
+                null);
     }
 
     /**
      * Creates new record instance with this type.
+     *
      * @return never null record instance.
      */
     public final MrzRecord newRecord() {
         try {
-            return recordClass.newInstance();
+            return recordClass.getDeclaredConstructor().newInstance();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

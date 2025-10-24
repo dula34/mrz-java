@@ -1,37 +1,46 @@
 /**
  * Java parser for the MRZ records, as specified by the ICAO organization.
  * Copyright (C) 2011 Innovatrics s.r.o.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 package com.innovatrics.mrz.records;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.innovatrics.mrz.MrzParser;
 import com.innovatrics.mrz.types.MrzDate;
 import com.innovatrics.mrz.types.MrzDocumentCode;
 import com.innovatrics.mrz.types.MrzSex;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  * Tests {@link FrenchIdCard}.
+ *
  * @author Martin Vysny
  */
 public class MRPTest {
     @Test
     public void testParsing() {
-        final MRP r = (MRP) MrzParser.parse("I<SVKNOVAK<<JAN<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n123456<AA5SVK8110251M1801020749313<<<<<<<<70\n");
+        final MRP r =
+                (MRP)
+                        MrzParser.parse(
+                                """
+                                I<SVKNOVAK<<JAN<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+                                123456<AA5SVK8110251M1801020749313<<<<<<<<70
+                                """);
         assertEquals(MrzDocumentCode.TypeI, r.code);
         assertEquals('I', r.code1);
         assertEquals('<', r.code2);
@@ -60,6 +69,9 @@ public class MRPTest {
         r.sex = MrzSex.Male;
         r.surname = "NOVAK";
         r.givenNames = "JAN";
-        assertEquals("I<SVKNOVAK<<JAN<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n123456<AA5SVK8110251M1801020749313<<<<<<<<70\n", r.toMrz());
+        assertEquals(
+                "I<SVKNOVAK<<JAN<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
+                        + "123456<AA5SVK8110251M1801020749313<<<<<<<<70\n",
+                r.toMrz());
     }
 }

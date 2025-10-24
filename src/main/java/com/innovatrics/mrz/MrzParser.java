@@ -1,17 +1,17 @@
 /**
  * Java parser for the MRZ records, as specified by the ICAO organization.
  * Copyright (C) 2011 Innovatrics s.r.o.
- * 
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -21,17 +21,17 @@ package com.innovatrics.mrz;
 import com.innovatrics.mrz.types.MrzDate;
 import com.innovatrics.mrz.types.MrzFormat;
 import com.innovatrics.mrz.types.MrzSex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Parses the MRZ records.
- * <p/>
+ * <p>
  * All parse methods throws {@link MrzParseException} unless stated otherwise.
+ *
  * @author Martin Vysny
  */
 public class MrzParser {
@@ -40,10 +40,12 @@ public class MrzParser {
      * The MRZ record, not null.
      */
     public final String mrz;
+
     /**
      * The MRZ record separated into rows.
      */
     public final String[] rows;
+
     /**
      * MRZ record format.
      */
@@ -51,6 +53,7 @@ public class MrzParser {
 
     /**
      * Creates new parser which parses given MRZ record.
+     *
      * @param mrz the MRZ record, not null.
      */
     public MrzParser(String mrz) {
@@ -60,9 +63,9 @@ public class MrzParser {
     }
 
     /**
-     * @author jllarraz@github
-     * Parses the MRZ name in form of SURNAME<<FIRSTNAME<
-     * @Param range the range
+     * Parses the MRZ name in form of SURNAME&lt;&lt;FIRSTNAME&lt;
+     *
+     * @param range the range containing the name.
      * @return array of [surname, first_name], never null, always with a length of 2.
      */
     public String[] parseName(MrzRange range) {
@@ -72,35 +75,54 @@ public class MrzParser {
             str = str.substring(0, str.length() - 1);
         }
         final String[] names = str.split("<<");
-        String surname = "";
+        String surname;
         String givenNames = "";
-        surname = parseString(new MrzRange(range.column, range.column + names[0].length(), range.row));
-        if(names.length==1){
-            givenNames = parseString(new MrzRange(range.column, range.column + names[0].length(), range.row));
+        surname =
+                parseString(
+                        new MrzRange(
+                                range.column(), range.column() + names[0].length(), range.row()));
+        if (names.length == 1) {
+            givenNames =
+                    parseString(
+                            new MrzRange(
+                                    range.column(),
+                                    range.column() + names[0].length(),
+                                    range.row()));
             surname = "";
+        } else if (names.length > 1) {
+            surname =
+                    parseString(
+                            new MrzRange(
+                                    range.column(),
+                                    range.column() + names[0].length(),
+                                    range.row()));
+            givenNames =
+                    parseString(
+                            new MrzRange(
+                                    range.column() + names[0].length() + 2,
+                                    range.column() + str.length(),
+                                    range.row()));
         }
-        else if(names.length>1){
-            surname = parseString(new MrzRange(range.column, range.column + names[0].length(), range.row));
-            givenNames = parseString(new MrzRange(range.column + names[0].length() + 2, range.column + str.length(), range.row));
-        }
-        return new String[]{surname, givenNames};
+        return new String[] {surname, givenNames};
     }
 
     /**
      * Returns a raw MRZ value from given range. If multiple ranges are specified, the value is concatenated.
+     *
      * @param range the ranges, not null.
      * @return raw value, never null, may be empty.
      */
     public String rawValue(MrzRange... range) {
         final StringBuilder sb = new StringBuilder();
         for (MrzRange r : range) {
-            sb.append(rows[r.row].substring(r.column, r.columnTo));
+            sb.append(rows[r.row()], r.column(), r.columnTo());
         }
         return sb.toString();
     }
 
     /**
      * Checks that given range contains valid characters.
+     *
      * @param range the range to check.
      */
     public void checkValidCharacters(MrzRange range) {
@@ -108,13 +130,18 @@ public class MrzParser {
         for (int i = 0; i < str.length(); i++) {
             final char c = str.charAt(i);
             if (c != FILLER && (c < '0' || c > '9') && (c < 'A' || c > 'Z')) {
-                throw new MrzParseException("Invalid character in MRZ record: " + c, mrz, new MrzRange(range.column + i, range.column + i + 1, range.row), format);
+                throw new MrzParseException(
+                        "Invalid character in MRZ record: " + c,
+                        mrz,
+                        new MrzRange(range.column() + i, range.column() + i + 1, range.row()),
+                        format);
             }
         }
     }
 
     /**
      * Parses a string in given range. &lt;&lt; are replaced with ", ", &lt; is replaced by space.
+     *
      * @param range the range
      * @return parsed string.
      */
@@ -129,9 +156,10 @@ public class MrzParser {
 
     /**
      * Verifies the check digit.
-     * @param col the 0-based column of the check digit.
-     * @param row the 0-based column of the check digit.
-     * @param strRange the range for which the check digit is computed.
+     *
+     * @param col       the 0-based column of the check digit.
+     * @param row       the 0-based column of the check digit.
+     * @param strRange  the range for which the check digit is computed.
      * @param fieldName (optional) field name. Used only when validity check fails.
      * @return true if check digit is valid, false if not
      */
@@ -141,9 +169,10 @@ public class MrzParser {
 
     /**
      * Verifies the check digit.
-     * @param col the 0-based column of the check digit.
-     * @param row the 0-based column of the check digit.
-     * @param str the raw MRZ substring.
+     *
+     * @param col       the 0-based column of the check digit.
+     * @param row       the 0-based column of the check digit.
+     * @param str       the raw MRZ substring.
      * @param fieldName (optional) field name. Used only when validity check fails.
      * @return true if check digit is valid, false if not
      */
@@ -161,25 +190,33 @@ public class MrzParser {
         }
         if (digit != checkDigit) {
             invalidCheckdigit = new MrzRange(col, col + 1, row);
-            System.out.println("Check digit verification failed for " + fieldName + ": expected " + digit + " but got " + checkDigit);
+            System.out.println(
+                    "Check digit verification failed for "
+                            + fieldName
+                            + ": expected "
+                            + digit
+                            + " but got "
+                            + checkDigit);
         }
-        return invalidCheckdigit==null;
+        return invalidCheckdigit == null;
     }
 
-    private static Logger log = LoggerFactory.getLogger(MrzParser.class);
+    private static final Logger log = LoggerFactory.getLogger(MrzParser.class);
 
     /**
      * Parses MRZ date.
+     *
      * @param range the range containing the date, in the YYMMDD format. The range must be 6 characters long.
      * @return parsed date
      * @throws IllegalArgumentException if the range is not 6 characters long.
      */
     public MrzDate parseDate(MrzRange range) {
         if (range.length() != 6) {
-            throw new IllegalArgumentException("Parameter range: invalid value " + range + ": must be 6 characters long");
+            throw new IllegalArgumentException(
+                    "Parameter range: invalid value " + range + ": must be 6 characters long");
         }
         MrzRange r;
-        r = new MrzRange(range.column, range.column + 2, range.row);
+        r = new MrzRange(range.column(), range.column() + 2, range.row());
         int year;
         try {
             year = Integer.parseInt(rawValue(r));
@@ -190,7 +227,7 @@ public class MrzParser {
         if (year < 0 || year > 99) {
             log.debug("Invalid year value " + year + ": must be 0..99");
         }
-        r = new MrzRange(range.column + 2, range.column + 4, range.row);
+        r = new MrzRange(range.column() + 2, range.column() + 4, range.row());
         int month;
         try {
             month = Integer.parseInt(rawValue(r));
@@ -199,9 +236,9 @@ public class MrzParser {
             log.debug("Failed to parse MRZ date month " + rawValue(range) + ": " + ex, mrz, r);
         }
         if (month < 1 || month > 12) {
-            log.debug("Invalid month value " + month + ": must be 1..12");
+            log.debug("Invalid month value {}: must be 1..12", month);
         }
-        r = new MrzRange(range.column + 4, range.column + 6, range.row);
+        r = new MrzRange(range.column() + 4, range.column() + 6, range.row());
         int day;
         try {
             day = Integer.parseInt(rawValue(r));
@@ -210,14 +247,14 @@ public class MrzParser {
             log.debug("Failed to parse MRZ date month " + rawValue(range) + ": " + ex, mrz, r);
         }
         if (day < 1 || day > 31) {
-            log.debug("Invalid day value " + day + ": must be 1..31");
+            log.debug("Invalid day value {}: must be 1..31", day);
         }
         return new MrzDate(year, month, day, rawValue(range));
-
     }
 
     /**
      * Parses the "sex" value from given column/row.
+     *
      * @param col the 0-based column
      * @param row the 0-based row
      * @return sex, never null.
@@ -225,10 +262,12 @@ public class MrzParser {
     public MrzSex parseSex(int col, int row) {
         return MrzSex.fromMrz(rows[row].charAt(col));
     }
-    private static final int[] MRZ_WEIGHTS = new int[]{7, 3, 1};
+
+    private static final int[] MRZ_WEIGHTS = new int[] {7, 3, 1};
 
     /**
      * Checks if given character is valid in MRZ.
+     *
      * @param c the character.
      * @return true if the character is valid, false otherwise.
      */
@@ -251,6 +290,7 @@ public class MrzParser {
 
     /**
      * Computes MRZ check digit for given string of characters.
+     *
      * @param str the string
      * @return check digit in range of 0..9, inclusive. See <a href="http://www2.icao.int/en/MRTD/Downloads/Doc%209303/Doc%209303%20English/Doc%209303%20Part%203%20Vol%201.pdf">MRTD documentation</a> part 15 for details.
      */
@@ -264,6 +304,7 @@ public class MrzParser {
 
     /**
      * Computes MRZ check digit for given string of characters.
+     *
      * @param str the string
      * @return check digit in range of 0..9, inclusive. See <a href="http://www2.icao.int/en/MRTD/Downloads/Doc%209303/Doc%209303%20English/Doc%209303%20Part%203%20Vol%201.pdf">MRTD documentation</a> part 15 for details.
      */
@@ -273,6 +314,7 @@ public class MrzParser {
 
     /**
      * Factory method, which parses the MRZ and returns appropriate record class.
+     *
      * @param mrz MRZ to parse.
      * @return record class.
      */
@@ -282,8 +324,7 @@ public class MrzParser {
         return result;
     }
 
-
-    private static final Map<String, String> EXPAND_CHARACTERS = new HashMap<String, String>();
+    private static final Map<String, String> EXPAND_CHARACTERS = new HashMap<>();
 
     static {
         EXPAND_CHARACTERS.put("\u00C4", "AE"); // Ä
@@ -301,17 +342,17 @@ public class MrzParser {
         EXPAND_CHARACTERS.put("\u00DC", "UE"); // Ü
         EXPAND_CHARACTERS.put("\u00FC", "UE"); // ü
         EXPAND_CHARACTERS.put("\u00DF", "SS"); // ß
-        EXPAND_CHARACTERS.put("\u00D0", "D");  // Ð
-        EXPAND_CHARACTERS.put("\u00F0", "d");  // ð
+        EXPAND_CHARACTERS.put("\u00D0", "D"); // Ð
+        EXPAND_CHARACTERS.put("\u00F0", "d"); // ð
         EXPAND_CHARACTERS.put("\u00DE", "TH"); // Þ
         EXPAND_CHARACTERS.put("\u00FE", "th"); // þ
     }
 
     /**
      * Converts given string to a MRZ string: removes all accents, converts the string to upper-case and replaces all spaces and invalid characters with '&lt;'.
-     * <p/>
      * Several characters are expanded:
      * <table border="1">
+     * <caption>Character expansions for MRZ</caption>
      * <tr><th>Character</th><th>Expand to</th></tr>
      * <tr><td>Ä</td><td>AE</td></tr>
      * <tr><td>Å</td><td>AA</td></tr>
@@ -323,13 +364,14 @@ public class MrzParser {
      * <tr><td>Ü</td><td>UE</td></tr>
      * <tr><td>ß</td><td>SS</td></tr>
      * </table>
-     * <p/>
+     * <p>
      * Examples:<ul>
      * <li><code>toMrz("Sedím na konári", 20)</code> yields <code>"SEDIM&lt;NA&lt;KONARI&lt;&lt;&lt;&lt;&lt;"</code></li>
      * <li><code>toMrz("Pat, Mat", 8)</code> yields <code>"PAT&lt;&lt;MAT"</code></li>
      * <li><code>toMrz("foo/bar baz", 4)</code> yields <code>"FOO&lt;"</code></li>
-     * <li><code>toMrz("*$()&/\", 8)</code> yields <code>"&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;"</code></li>
+     * <li><code>toMrz("*$()&amp;/\", 8)</code> yields <code>"&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;"</code></li>
      * </ul>
+     *
      * @param string the string to convert. Passing null is the same as passing in an empty string.
      * @param length required length of the string. If given string is longer, it is truncated. If given string is shorter than given length, '&lt;' characters are appended at the end. If -1, the string is neither truncated nor enlarged.
      * @return MRZ-valid string.
@@ -360,25 +402,29 @@ public class MrzParser {
     }
 
     private static boolean isBlank(String str) {
-        return str == null || str.trim().length() == 0;
+        return str == null || str.trim().isEmpty();
     }
 
     /**
      * Converts a surname and given names to a MRZ string, shortening them as per Doc 9303 Part 3 Vol 1 Section 6.7 of the MRZ specification when necessary.
-     * @param surname the surname, not blank.
+     *
+     * @param surname    the surname, not blank.
      * @param givenNames given names, not blank.
-     * @param length required length of the string. If given string is longer, it is shortened. If given string is shorter than given length, '&lt;' characters are appended at the end.
+     * @param length     required length of the string. If given string is longer, it is shortened. If given string is shorter than given length, '&lt;' characters are appended at the end.
      * @return name, properly converted to MRZ format of SURNAME&lt;&lt;GIVENNAMES&lt;..., with the exact length of given length.
      */
     public static String nameToMrz(String surname, String givenNames, int length) {
         if (isBlank(surname)) {
-            throw new IllegalArgumentException("Parameter surname: invalid value " + surname + ": blank");
+            throw new IllegalArgumentException(
+                    "Parameter surname: invalid value " + surname + ": blank");
         }
         if (isBlank(givenNames)) {
-            throw new IllegalArgumentException("Parameter givenNames: invalid value " + givenNames + ": blank");
+            throw new IllegalArgumentException(
+                    "Parameter givenNames: invalid value " + givenNames + ": blank");
         }
         if (length <= 0) {
-            throw new IllegalArgumentException("Parameter length: invalid value " + length + ": not positive");
+            throw new IllegalArgumentException(
+                    "Parameter length: invalid value " + length + ": not positive");
         }
         surname = surname.replace(", ", " ");
         givenNames = givenNames.replace(", ", " ");
@@ -398,13 +444,22 @@ public class MrzParser {
             final String ct = currentlyTruncating[currentlyTruncatingIndex];
             final int ctsize = ct.length();
             if (nameSize - ctsize + 1 <= length) {
-                currentlyTruncating[currentlyTruncatingIndex] = ct.substring(0, ctsize - (nameSize - length));
+                currentlyTruncating[currentlyTruncatingIndex] =
+                        ct.substring(0, ctsize - (nameSize - length));
             } else {
                 currentlyTruncating[currentlyTruncatingIndex] = ct.substring(0, 1);
                 currentlyTruncatingIndex--;
                 if (currentlyTruncatingIndex < 0) {
                     if (currentlyTruncating == surnames) {
-                        throw new IllegalArgumentException("Cannot truncate name " + surname + " " + givenNames + ": length too small: " + length + "; truncated to " + toName(surnames, given));
+                        throw new IllegalArgumentException(
+                                "Cannot truncate name "
+                                        + surname
+                                        + " "
+                                        + givenNames
+                                        + ": length too small: "
+                                        + length
+                                        + "; truncated to "
+                                        + toName(surnames, given));
                     }
                     currentlyTruncating = surnames;
                     currentlyTruncatingIndex = currentlyTruncating.length - 1;
@@ -414,6 +469,7 @@ public class MrzParser {
         }
         return toMrz(toName(surnames, given), length);
     }
+
     /**
      * The filler character, '&lt;'.
      */
