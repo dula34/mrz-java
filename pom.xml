@@ -27,20 +27,9 @@
     <packaging>jar</packaging>
     <version>0.6.1</version>
     <name>MRZ Java Parser</name>
-    <url>https://github.com/ZsBT/mrz-java</url>
+    <url>https://github.com/dula34/mrz-java</url>
     <inceptionYear>2011</inceptionYear>
     <description>Provides Java MRZ parser</description>
-    <organization>
-        <name>Innovatrics</name>
-        <url>http://www.innovatrics.com</url>
-    </organization>
-    <scm>
-        <connection>scm:hg:ssh://git@github.com/ZsBT/mrz-java</connection>
-    </scm>
-    <issueManagement>
-        <system>Github</system>
-        <url>https://github.com/ZsBT/mrz-java/issues</url>
-    </issueManagement>
     <licenses>
         <license>
             <name>The GNU Lesser General Public License, version 2.1 (LGPL-2.1)</name>
@@ -52,6 +41,15 @@
             <id>mvy</id>
             <name>Martin Vysny</name>
             <email>vysny@baka.sk</email>
+            <timezone>1</timezone>
+            <roles>
+                <role>developer</role>
+            </roles>
+        </developer>
+        <developer>
+            <id>vs</id>
+            <name>Vladimir Sima</name>
+            <email>dula34.temp@gmail.com</email>
             <timezone>1</timezone>
             <roles>
                 <role>developer</role>
@@ -84,7 +82,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.12.0</version>
                 <configuration>
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <additionalOptions>-Xdoclint:none</additionalOptions>
                 </configuration>
                 <executions>
                     <execution>
